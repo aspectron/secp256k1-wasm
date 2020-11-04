@@ -57,6 +57,13 @@ you should see hello_world in console and "dev/diplay/debug area" in page
 
 now clone secp256k1 (https://github.com/kaspanet/secp256k1.git)
 copy www.c to secp256k1/src (or find a way to include secp256k1 lib into www.c)
+add following to Makefile.am so that "emmake make" command can genrate "src/www.o"  object file
+`````
+noinst_PROGRAMS += www
+www_SOURCES =src/www.c
+`````
+
+
 cd secp256k1
 ./configure
 ../emscripten/emconfigure ./configure
