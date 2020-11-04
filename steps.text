@@ -14,8 +14,6 @@ NNN = no of CPU cores to faster the build process;
 
 "<path to llvm>" should point to "llvm-project/llvm" directory
 
-
-
 cd binaryen
 cmake . && make -j NNN
 
@@ -52,6 +50,15 @@ node server.js   or // python -m SimpleHTTPServer 8000 <-- python server have is
 then in Browser load http://localhost:8000/hello_world.html
 
 you should see hello_world in console and "dev/diplay/debug area" in page
+
+
+
+now we are using secp.cpp file 
+
+emscripten/emcc -I ./depend/secp256k1 -I ./depend/secp256k1/src secp.cpp -o http/secp.html -s EXTRA_EXPORTED_RUNTIME_METHODS='["cwrap"]' -std=c++11 --bind
+
+
+
 
 
 

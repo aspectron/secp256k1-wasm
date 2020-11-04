@@ -200,15 +200,23 @@
           console.log("Module.cwrap: ", Module.cwrap)
           
           const api = {
+            init: Module.cwrap('init'),
+            genPrivkey: Module.cwrap('genPrivkey'),
             fib: Module.cwrap('fib', 'number', ['number']),
             version: Module.cwrap('version', 'number', []),
-            ecdsa_sign: Module.cwrap('ecdsa_sign'),
+            ecdsa_sign: Module.cwrap('ecdsa_sign', 'null', ['string']),
             test123: Module.cwrap('test123', 'number', ['number'])
           };
+
+          //console.log("api.init():", api.init());
+          //console.log("api.genPrivkey()", api.genPrivkey())
           //console.log("fib:12=", api.fib(12));
           //console.log("version=", api.version());
-          console.log("test123:", api.test123(6))
-          console.log("ecdsa_sign", api.ecdsa_sign())
+          //console.log("test123:", api.test123(6))
+          let result = Module.ecdsa_sign("hello i am test message", "79afbf7147841fca72b45a1978dd7669470ba67abbe5c220062924380c9c364b")
+          console.log("Module.ecdsa_sign()", result);
+          result = null;
+
           
         },
         totalDependencies: 0,
@@ -227,7 +235,7 @@
         };
       };
     </script>
-    <script async type="text/javascript" src="www.js"></script>
+    <script async type="text/javascript" src="secp.js"></script>
     <!--
 <script src="/a.out.js"></script>
 <script>
