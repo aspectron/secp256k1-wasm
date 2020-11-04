@@ -1,0 +1,5 @@
+include_HEADERS += include/secp256k1_oldschnorr.h
+noinst_HEADERS += src/modules/oldschnorr/main_impl.h
+noinst_HEADERS += src/modules/oldschnorr/oldschnorr.h
+noinst_HEADERS += src/modules/oldschnorr/oldschnorr_impl.h
+noinst_HEADERS += src/modules/oldschnorr/tests_impl.h
