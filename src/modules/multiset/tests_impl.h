@@ -32,7 +32,7 @@ static unsigned char elements[DATACOUNT][DATALEN];
 
 /* Create random data */
 static void initdata(void) {
-    secp256k1_rand_bytes_test(&elements[0][0], DATACOUNT*DATALEN);
+    secp256k1_testrand_bytes_test(&elements[0][0], DATACOUNT*DATALEN);
 }
 
 void test_unordered(void) {

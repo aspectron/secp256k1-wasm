@@ -1,93 +1,109 @@
 language: c
-os: linux
+os:
+  - linux
+  - osx
+
+dist: bionic
+# Valgrind currently supports upto macOS 10.13, the latest xcode of that version is 10.1
+osx_image: xcode10.1
 addons:
   apt:
-    packages: libgmp-dev
+    packages:
+      - libgmp-dev
+      - valgrind
+      - libtool-bin
 compiler:
   - clang
   - gcc
 env:
   global:
-    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ECMULTGENPRECISION=auto  ASM=no  BUILD=check  EXTRAFLAGS=  HOST=  ECDH=no  RECOVERY=no OLDSCHNORR=no MULTISET=no EXPERIMENTAL=no
+    - WIDEMUL=auto  BIGNUM=auto  STATICPRECOMPUTATION=yes  ECMULTGENPRECISION=auto  ASM=no  BUILD=check  WITH_VALGRIND=yes RUN_VALGRIND=no EXTRAFLAGS=  HOST=  ECDH=no  RECOVERY=no SCHNORRSIG=no EXPERIMENTAL=no CTIMETEST=yes BENCH=yes ITERS=2
   matrix:
-    - SCALAR=32bit    RECOVERY=yes
-    - SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes OLDSCHNORR=yes MULTISET=yes
-    - SCALAR=64bit
-    - FIELD=64bit     RECOVERY=yes
-    - FIELD=64bit     ENDOMORPHISM=yes
-    - FIELD=64bit     ENDOMORPHISM=yes  ECDH=yes EXPERIMENTAL=yes OLDSCHNORR=yes MULTISET=yes
-    - FIELD=64bit                       ASM=x86_64
-    - FIELD=64bit     ENDOMORPHISM=yes  ASM=x86_64
-    - FIELD=32bit     ENDOMORPHISM=yes
+    - WIDEMUL=int64   RECOVERY=yes
+    - WIDEMUL=int64   ECDH=yes  EXPERIMENTAL=yes SCHNORRSIG=yes
+    - WIDEMUL=int128
+    - WIDEMUL=int128  RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes
+    - WIDEMUL=int128  ECDH=yes EXPERIMENTAL=yes SCHNORRSIG=yes
+    - WIDEMUL=int128                    ASM=x86_64
     - BIGNUM=no
-    - BIGNUM=no       ENDOMORPHISM=yes RECOVERY=yes EXPERIMENTAL=yes OLDSCHNORR=yes MULTISET=yes
+    - BIGNUM=no       RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes
     - BIGNUM=no       STATICPRECOMPUTATION=no
-    - BUILD=distcheck
-    - EXTRAFLAGS=CPPFLAGS=-DDETERMINISTIC
-    - EXTRAFLAGS=CFLAGS=-O0
+    - BUILD=distcheck WITH_VALGRIND=no CTIMETEST=no BENCH=no
+    - CPPFLAGS=-DDETERMINISTIC
+    - CFLAGS=-O0 CTIMETEST=no
+    - CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer" LDFLAGS="-fsanitize=undefined -fno-omit-frame-pointer" UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" BIGNUM=no ASM=x86_64 ECDH=yes RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes CTIMETEST=no
     - ECMULTGENPRECISION=2
     - ECMULTGENPRECISION=8
+    - RUN_VALGRIND=yes BIGNUM=no ASM=x86_64 ECDH=yes  RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes EXTRAFLAGS="--disable-openssl-tests" BUILD=
 matrix:
   fast_finish: true
   include:
     - compiler: clang
-      env: HOST=i686-linux-gnu ENDOMORPHISM=yes
+      os: linux
+      env: HOST=i686-linux-gnu
       addons:
         apt:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
+            - valgrind
+            - libtool-bin
+            - libc6-dbg:i386
     - compiler: clang
       env: HOST=i686-linux-gnu
+      os: linux
       addons:
         apt:
           packages:
             - gcc-multilib
+            - valgrind
+            - libtool-bin
+            - libc6-dbg:i386
     - compiler: gcc
-      env: HOST=i686-linux-gnu ENDOMORPHISM=yes
+      env: HOST=i686-linux-gnu
+      os: linux
       addons:
         apt:
           packages:
             - gcc-multilib
+            - valgrind
+            - libtool-bin
+            - libc6-dbg:i386
     - compiler: gcc
+      os: linux
       env: HOST=i686-linux-gnu
       addons:
         apt:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
-    - compiler: gcc
-      env:
-        - BIGNUM=no  ENDOMORPHISM=yes  ASM=x86_64 EXPERIMENTAL=yes ECDH=yes  RECOVERY=yes OLDSCHNORR=yes MULTISET=yes
-        - VALGRIND=yes EXTRAFLAGS="--disable-openssl-tests CPPFLAGS=-DVALGRIND" BUILD=
-      addons:
-        apt:
-          packages:
             - valgrind
+            - libtool-bin
+            - libc6-dbg:i386
+    # S390x build (big endian system)
     - compiler: gcc
-      env: # The same as above but without endomorphism.
-        - BIGNUM=no  ENDOMORPHISM=no  ASM=x86_64 EXPERIMENTAL=yes ECDH=yes  RECOVERY=yes OLDSCHNORR=yes MULTISET=yes
-        - VALGRIND=yes EXTRAFLAGS="--disable-openssl-tests CPPFLAGS=-DVALGRIND" BUILD=
-      addons:
-        apt:
-          packages:
-            - valgrind
+      env: HOST=s390x-unknown-linux-gnu ECDH=yes RECOVERY=yes EXPERIMENTAL=yes SCHNORRSIG=yes CTIMETEST=
+      arch: s390x
+
+# We use this to install macOS dependencies instead of the built in `homebrew` plugin,
+# because in xcode earlier than 11 they have a bug requiring updating the system which overall takes ~8 minutes.
+# https://travis-ci.community/t/macos-build-fails-because-of-homebrew-bundle-unknown-command/7296
+before_install:
+ - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then HOMEBREW_NO_AUTO_UPDATE=1 brew install gmp valgrind gcc@9; fi
 
 before_script: ./autogen.sh
 
+# travis auto terminates jobs that go for 10 minutes without printing to stdout, but travis_wait doesn't work well with forking programs like valgrind (https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received https://github.com/bitcoin-core/secp256k1/pull/750#issuecomment-623476860)
 script:
- - if [ -n "$HOST" ]; then export USE_HOST="--host=$HOST"; fi
- - if [ "x$HOST" = "xi686-linux-gnu" ]; then export CC="$CC -m32"; fi
- - ./configure --enable-experimental=$EXPERIMENTAL --enable-endomorphism=$ENDOMORPHISM --with-field=$FIELD --with-bignum=$BIGNUM --with-asm=$ASM --with-scalar=$SCALAR --enable-ecmult-static-precomputation=$STATICPRECOMPUTATION --with-ecmult-gen-precision=$ECMULTGENPRECISION --enable-module-ecdh=$ECDH --enable-module-oldschnorr=$OLDSCHNORR --enable-module-multiset=$MULTISET --enable-module-recovery=$RECOVERY $EXTRAFLAGS $USE_HOST
- - if [ -n "$BUILD" ]; then make -j2 $BUILD; fi
- - # travis_wait extends the 10 minutes without output allowed (https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received)
- - # the `--error-exitcode` is required to make the test fail if valgrind found errors, otherwise it'll return 0 (http://valgrind.org/docs/manual/manual-core.html)
- - if [ -n "$VALGRIND" ]; then
-   make -j2 &&
-   travis_wait 30 valgrind --error-exitcode=42 ./tests 16 &&
-   travis_wait 30 valgrind --error-exitcode=42 ./exhaustive_tests;
-   fi
+  - function keep_alive() { while true; do echo -en "\a"; sleep 60; done }
+  - keep_alive &
+  - ./contrib/travis.sh
+  - kill %keep_alive
 
 after_script:
     - cat ./tests.log
     - cat ./exhaustive_tests.log
+    - cat ./valgrind_ctime_test.log
+    - cat ./bench.log
+    - $CC --version
+    - valgrind --version
