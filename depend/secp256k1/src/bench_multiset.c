@@ -9,45 +9,54 @@
 #include "util.h"
 #include "bench.h"
 
-secp256k1_context *ctx;
 
-#define UNUSED(x) (void)(x)
+typedef struct {
+    secp256k1_context *ctx;
+} bench_multiset_data;
 
-void bench_multiset(void* arg) {
-    int it=0;
-    unsigned n,m;
-    unsigned char result[32];
+
+void bench_multiset_add(void* arg, int iters) {
+    bench_multiset_data *data = (bench_multiset_data*)arg;
+    int i;
     secp256k1_multiset multiset;
+    unsigned char buf[100] = "multiset add element benchmark example string for 100 bytes this long message to 100 bytes abcdefghi";
 
-    UNUSED(arg);
-    secp256k1_multiset_init(ctx, &multiset);
+    secp256k1_multiset_init(data->ctx, &multiset);
 
-    for (m=0; m < 300000; m++)
-    {
-        unsigned char buf[32*3];
-        secp256k1_multiset x;
-
-        for(n = 0; n < sizeof(buf); n++)
-        {
-            buf[n] = it++;
-        }
-
-        secp256k1_multiset_add(ctx, &x, buf, sizeof(buf));
+    for (i = 0; i < iters; i++) {
+        buf[0] = i;
+        buf[1] = i >> 8;
+        buf[2] = i << 8;
+        CHECK(secp256k1_multiset_add(data->ctx, &multiset, buf, sizeof(buf)));
     }
-
-    secp256k1_multiset_finalize(ctx, result, &multiset);
 }
 
-void bench_multiset_setup(void* arg) {
-    UNUSED(arg);
+void bench_multiset_remove(void* arg, int iters) {
+    bench_multiset_data *data = (bench_multiset_data*)arg;
+    int i;
+    secp256k1_multiset multiset;
+    unsigned char buf[100] = "multiset add element benchmark example string for 100 bytes this long message to 100 bytes abcdefghi";
+
+    secp256k1_multiset_init(data->ctx, &multiset);
+
+    for (i = 0; i < iters; i++) {
+        buf[99] = i;
+        buf[98] = i >> 8;
+        buf[97] = i << 8;
+        CHECK(secp256k1_multiset_remove(data->ctx, &multiset, buf, sizeof(buf)));
+    }
 }
 
 int main(void) {
+    int iters = get_iters(10000);
+    bench_multiset_data data;
 
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
 
-    run_benchmark("multiset", bench_multiset, bench_multiset_setup, NULL, NULL, 5, 1);
+    data.ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
 
-    secp256k1_context_destroy(ctx);
+    run_benchmark("multiset add", bench_multiset_add, NULL, NULL, &data, 30, iters*2);
+    run_benchmark("multiset remove", bench_multiset_remove, NULL, NULL, &data, 30, iters*2);
+
+    secp256k1_context_destroy(data.ctx);
     return 0;
 }
