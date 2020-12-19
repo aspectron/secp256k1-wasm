@@ -28,13 +28,16 @@ int secp256k1_xonly_pubkey_parse(const secp256k1_context* ctx, secp256k1_xonly_p
     ARG_CHECK(input32 != NULL);
 
     if (!secp256k1_fe_set_b32(&x, input32)) {
-        return 0;
+        return 2;
+    }
+    if(!secp256k1_ge_set_xquad(&pk, &x)){
+        return 3;
     }
     if (!secp256k1_ge_set_xo_var(&pk, &x, 0)) {
-        return 0;
+        return 4;
     }
     if (!secp256k1_ge_is_in_correct_subgroup(&pk)) {
-        return 0;
+        return 5;
     }
     secp256k1_xonly_pubkey_save(pubkey, &pk);
     return 1;
@@ -186,6 +189,15 @@ int secp256k1_keypair_create(const secp256k1_context* ctx, secp256k1_keypair *ke
     return ret;
 }
 
+int secp256k1_keypair_seckey(const secp256k1_context* ctx, unsigned char *seckey32, secp256k1_keypair *keypair) {
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(seckey32 != NULL);
+    memset(seckey32, 0, 32);
+    ARG_CHECK(keypair != NULL);
+
+    memcpy(seckey32, &keypair->data[0], 32);
+    return 1;
+}
 int secp256k1_keypair_pub(const secp256k1_context* ctx, secp256k1_pubkey *pubkey, const secp256k1_keypair *keypair) {
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(pubkey != NULL);

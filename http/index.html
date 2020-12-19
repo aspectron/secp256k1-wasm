@@ -213,11 +213,14 @@
           //console.log("fib:12=", api.fib(12));
           //console.log("version=", api.version());
           //console.log("test123:", api.test123(6))
-          let result = Module.ecdsa_sign("hello i am test message", "79afbf7147841fca72b45a1978dd7669470ba67abbe5c220062924380c9c364b")
-          console.log("Module.ecdsa_sign()", result);
-          result = null;
+          //let result = Module.ecdsa_sign("hello i am test message", "79afbf7147841fca72b45a1978dd7669470ba67abbe5c220062924380c9c364b")
+          //console.log("Module.ecdsa_sign()", result);
+          //result = null;
 
-          
+          let key = "02cde3cb58b8b66bbf49c53ea563df0098b876bc850cde5269c695886c5df0f28f";
+          //key = "34343";
+          let r = Module.test_keypair_seckey(key);
+          Module.print("test_keypair_seckey :", key+"\n"+JSON.stringify(r, null, "\t").replace(/<nl>/g, "\n"))
         },
         totalDependencies: 0,
         monitorRunDependencies: function(left) {

@@ -38,9 +38,11 @@ extern "C" {
     #define ECMULT_WINDOW_SIZE 15
     #define ECMULT_GEN_PREC_BITS 4
     #define HAVE_LIBCRYPTO 1
+    #define ENABLE_MODULE_EXTRAKEYS 1
 
+    
+    #include "include/secp256k1_extrakeys.h"
     #include "secp256k1.c"
-    #include "include/secp256k1.h"
     #include "util.h"
     #include "bench.h"
 
@@ -164,42 +166,6 @@ extern "C" {
         
         printf("privKey: %s\n", privKeyHex);
     }
-
-
-    int main111(void) {
-
-        /*int i;
-        secp256k1_pubkey pubkey;
-        secp256k1_ecdsa_signature sig;
-        benchmark_verify_t data;
-
-        data.ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-
-        for (i = 0; i < 32; i++) {
-            data.msg[i] = 1 + i;
-        }
-        for (i = 0; i < 32; i++) {
-            data.key[i] = 33 + i;
-        }
-        data.siglen = 72;
-        CHECK(secp256k1_ecdsa_sign(data.ctx, &sig, data.msg, data.key, NULL, NULL));
-        CHECK(secp256k1_ecdsa_signature_serialize_der(data.ctx, data.sig, &data.siglen, &sig));
-        CHECK(secp256k1_ec_pubkey_create(data.ctx, &pubkey, data.key));
-        data.pubkeylen = 33;
-        CHECK(secp256k1_ec_pubkey_serialize(data.ctx, data.pubkey, &data.pubkeylen, &pubkey, SECP256K1_EC_COMPRESSED) == 1);
-
-        run_benchmark("ecdsa_verify", benchmark_verify, NULL, NULL, &data, 10, 20000);
-    #ifdef ENABLE_OPENSSL_TESTS
-        data.ec_group = EC_GROUP_new_by_curve_name(NID_secp256k1);
-        run_benchmark("ecdsa_verify_openssl", benchmark_verify_openssl, NULL, NULL, &data, 10, 20000);
-        EC_GROUP_free(data.ec_group);
-    #endif
-
-        secp256k1_context_destroy(data.ctx);
-        */
-        printf("secp module loaded!\n");
-        return 0;
-    }
 }
 using namespace emscripten;
 
@@ -235,14 +201,35 @@ std::string convertToString(char* a){//, int size)
     return s; 
 }
 
-char const hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',   'B','C','D','E','F'};
+std::string convertToString(const unsigned char* a){//, int size)
+    //int hex_size = sizeof(hex) / sizeof(char);
+    //std::string hex_str = convertToString(hex, hex_size);
+    std::string s = std::string( reinterpret_cast< const char* >(a)); 
+    return s; 
+}
+
+char const hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B','C','D','E','F'};
 
 std::string convertToHex(unsigned char* data, int len) {
+  std::string str;
+  //int len = 10;//sizeof(data);
+  printf("len: %i %s\n", len, data);
+  for (int i = 0; i < len; ++i) {
+    const char ch = data[i];
+    //printf("ch: %c\n", ch);
+    str.append(&hex[(ch  & 0xF0) >> 4], 1);
+    str.append(&hex[ch & 0xF], 1);
+  }
+  return str;
+}
+
+std::string convertToHex(const unsigned char* data, int len) {
   std::string str;
   //int len = 10;//sizeof(data);
   printf("len: %i\n", len);
   for (int i = 0; i < len; ++i) {
     const char ch = data[i];
+    //printf("ch: %c\n", ch);
     str.append(&hex[(ch  & 0xF0) >> 4], 1);
     str.append(&hex[ch & 0xF], 1);
   }
@@ -251,14 +238,16 @@ std::string convertToHex(unsigned char* data, int len) {
 
 
 
-struct SignResult {
-    std::string sig;
-    std::string sig2;
-    std::string msg;
-    std::string privKey;
+
+struct Result {
+    std::string data;
+    unsigned char c;
+    int r;
 };
-SignResult result;
-SignResult ecdsa_sign_new(std::string _msg, std::string privKey){
+Result result;
+
+
+Result ecdsa_sign_new(std::string _msg, std::string privKey){
     char* msg;
     msg = &_msg[0];
     int i;
@@ -276,8 +265,8 @@ SignResult ecdsa_sign_new(std::string _msg, std::string privKey){
 
     sha265Encode(msg, msgHash);
     charArray2hexString(msgHash, msgHashHex);
-    result.msg = convertToString(msgHashHex);
-    result.privKey = privKey;//convertToString(privKeyHex);
+    //result.msg = convertToString(msgHashHex);
+    //result.privKey = privKey;//convertToString(privKeyHex);
     //printf("MSG: %s\nHEX: %s\n", msg, msgHashHex);
     
 
@@ -302,20 +291,122 @@ SignResult ecdsa_sign_new(std::string _msg, std::string privKey){
     //printf("privKey: %s\n", privKeyHex);
     
     //result.sig2 = convertToString(hex);
-    result.sig = convertToHex(sig.data, 64);
+    result.data = convertToHex(sig.data, 64);
 
     return result;
 }
 
+
+
+
+int _deserializePrivateKey(std::string data, secp256k1_keypair *keypair){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+
+    for(int i=0; i<96; i++){
+        keypair->data[i] = 'x';
+    }
+
+    const unsigned char *privateKey = strToUnsignedChars(data);
+    int r = secp256k1_keypair_create(ctx, keypair, privateKey);
+    secp256k1_context_destroy(ctx);
+    return r;
+}
+
+
+
+Result test_keypair_seckey(std::string seckey){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    secp256k1_keypair keypair = {};
+    _deserializePrivateKey(seckey, &keypair);
+    secp256k1_xonly_pubkey pubkey;
+    int pk_parity;
+    int r2 = secp256k1_keypair_xonly_pub(ctx, &pubkey, &pk_parity, &keypair);
+
+    unsigned char seckey32[32];
+    for(int i=0; i<32; i++){
+        seckey32[i] = 'x';
+    }
+    result.r = secp256k1_keypair_seckey(ctx, seckey32, &keypair);
+    printf("keypair.data: %s\n", convertToHex(keypair.data, 96).c_str());
+    
+
+    result.data = std::to_string(pk_parity)+":"+convertToHex(pubkey.data, 64)+"::"+convertToString(seckey32)+"::"+convertToHex(seckey32, 32);
+    secp256k1_context_destroy(ctx);
+    return result;
+}
+
+Result deserializePrivateKey(std::string seckey){
+    secp256k1_keypair keypair;
+    const unsigned char *privateKey = strToUnsignedChars(seckey);
+    result.r = _deserializePrivateKey(seckey, &keypair);
+    result.data = convertToString(privateKey)+"<nl>"+convertToHex(keypair.data, 96);
+    return result;
+}
+
+
+Result ec_pubkey_parse(std::string pubKeyStr){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    //secp256k1_context_randomize(ctx)
+
+    secp256k1_pubkey xPubKey;
+
+    const unsigned char *pubKey = strToUnsignedChars(pubKeyStr);
+    int r = secp256k1_ec_pubkey_parse(ctx, &xPubKey, pubKey, 33);
+    secp256k1_context_destroy(ctx);
+
+    //char dataHex[64];
+    //charArray2hexString(xonlyPubKey.data, dataHex);
+    //result.data = convertToString(pubKey);
+    result.r = r;
+    result.data = convertToString(pubKey)+":1:"+convertToHex(xPubKey.data, 64);
+    return result;
+}
+
+Result secp256k_xonly_pubkey_parse(std::string pubKeyStr){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    //secp256k1_context_randomize(ctx)
+
+    secp256k1_xonly_pubkey xonlyPubKey;
+
+    const unsigned char *pubKey = strToUnsignedChars(pubKeyStr);
+    int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
+    secp256k1_context_destroy(ctx);
+
+    //char dataHex[64];
+    //charArray2hexString(xonlyPubKey.data, dataHex);
+    //result.data = convertToString(pubKey);
+    result.r = r;
+    result.data = convertToString(pubKey)+"::"+convertToHex(xonlyPubKey.data, 64);
+    return result;
+} 
+
 EMSCRIPTEN_BINDINGS(my_module) {
     //function("lerp", &lerp);
     function("ecdsa_sign", &ecdsa_sign_new);
+    function("secp256k_xonly_pubkey_parse", &secp256k_xonly_pubkey_parse);
+    function("ec_pubkey_parse", &ec_pubkey_parse);
+    function("deserializePrivateKey", &deserializePrivateKey);
+    function("test_keypair_seckey", &test_keypair_seckey);
+    
 
+    value_object<Result>("Result")
+        .field("data", &Result::data)
+        .field("c", &Result::c)
+        .field("r", &Result::r);
+
+    /*
     value_object<SignResult>("SignResult")
         .field("sig", &SignResult::sig)
-        .field("sig2", &SignResult::sig2)
+        //.field("sig2", &SignResult::sig2)
         //.field("msg", &SignResult::msg)
         //.field("privKey", &SignResult::privKey)
         ;
+    */
+    
+
 }
 
