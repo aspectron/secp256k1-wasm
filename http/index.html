@@ -220,7 +220,7 @@
           let key = "02cde3cb58b8b66bbf49c53ea563df0098b876bc850cde5269c695886c5df0f28f";
           //key = "34343";
           let r = Module.test_keypair_seckey(key);
-          Module.print("test_keypair_seckey :", key+"\n"+JSON.stringify(r, null, "\t").replace(/<nl>/g, "\n"))
+          Module.print("test_keypair_seckey :", key+"\n"+JSON.stringify(r, null, "\t").replace(/<nl>/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t\t"))
         },
         totalDependencies: 0,
         monitorRunDependencies: function(left) {

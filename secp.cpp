@@ -320,19 +320,37 @@ Result test_keypair_seckey(std::string seckey){
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     secp256k1_keypair keypair = {};
     _deserializePrivateKey(seckey, &keypair);
-    secp256k1_xonly_pubkey pubkey;
+    secp256k1_xonly_pubkey pubkey{}, pubkey2;
+    unsigned char output32;
+    //memset(&output32, 0, 32);
+    for(int i=0; i<64; i++){
+        pubkey.data[i] = '0';
+    }
     int pk_parity;
     int r2 = secp256k1_keypair_xonly_pub(ctx, &pubkey, &pk_parity, &keypair);
+
+    for(int i=0; i<64; i++){
+        pubkey2.data[i] = pubkey.data[i];
+    }
+
+    int r3 = secp256k1_xonly_pubkey_serialize(ctx, &output32, &pubkey2);
 
     unsigned char seckey32[32];
     for(int i=0; i<32; i++){
         seckey32[i] = 'x';
     }
+
+    
     result.r = secp256k1_keypair_seckey(ctx, seckey32, &keypair);
     printf("keypair.data: %s\n", convertToHex(keypair.data, 96).c_str());
     
 
-    result.data = std::to_string(pk_parity)+":"+convertToHex(pubkey.data, 64)+"::"+convertToString(seckey32)+"::"+convertToHex(seckey32, 32);
+    result.data =   "\n\tpk_parity: "+std::to_string(pk_parity)
+                    +"\n\tseckey32: "+convertToHex(seckey32, 32)
+                    +"\n\tpubkey1: "+convertToHex(pubkey.data, 64)
+                    +"\n\tpubkey2: "+convertToHex(pubkey2.data, 64)
+                    +"\n\toutput32: "+convertToHex(&output32, 32)
+                    +"\n\tseckey32: "+convertToString(seckey32)+"\n";
     secp256k1_context_destroy(ctx);
     return result;
 }
