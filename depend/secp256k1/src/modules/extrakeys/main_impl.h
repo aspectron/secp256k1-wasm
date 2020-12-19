@@ -196,6 +196,23 @@ int secp256k1_keypair_seckey(const secp256k1_context* ctx, unsigned char *seckey
     ARG_CHECK(keypair != NULL);
 
     memcpy(seckey32, &keypair->data[0], 32);
+    /*
+    //secp256k1_scalar *sk;
+    //secp256k1_keypair_seckey_load(ctx, sk, keypair);
+    //secp256k1_fe_get_b32(output32, sk->d);
+    
+    char const hex_chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    int j = 0;
+    for(int i=0; i<96;i++){
+        if(j<32){
+            seckey32[j++] = keypair->data[i];
+        }else{
+            seckey32[j++] = hex_chars[(keypair->data[i] & 0xF0)>>4];
+            seckey32[j++] = hex_chars[(keypair->data[i] & 0x0F)>>0];
+        }
+    }
+    */
+    
     return 1;
 }
 int secp256k1_keypair_pub(const secp256k1_context* ctx, secp256k1_pubkey *pubkey, const secp256k1_keypair *keypair) {
