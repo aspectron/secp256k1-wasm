@@ -219,7 +219,7 @@
 
           let key = "5b7bb00d0cde4251a87b24d1d5204bb13ac123d379fbcd153b0f741617ab7b9f";
           //key = "34343";
-          let r = Module.test_keypair_seckey(key);
+          let r = Module.export_public_keys(key);
           Module.print("test_keypair_seckey :", key+"\n"+JSON.stringify(r, null, "\t").replace(/<nl>/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t\t"))
         },
         totalDependencies: 0,

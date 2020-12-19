@@ -244,7 +244,15 @@ struct Result {
     unsigned char c;
     int r;
 };
+
+struct PublicKeys{
+    std::string key;
+    std::string xonly;
+    std::string seckey;
+};
+
 Result result;
+PublicKeys publicKeys;
 
 
 Result ecdsa_sign_new(std::string _msg, std::string privKey){
@@ -364,6 +372,32 @@ Result test_keypair_seckey(std::string seckey){
     return result;
 }
 
+PublicKeys export_public_keys(std::string seckey){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    secp256k1_keypair keypair;
+    _deserializePrivateKey(ctx, seckey, &keypair);
+    secp256k1_xonly_pubkey xOnlyPubkey{};
+    unsigned char xOnlyPubkeySerialized[32], pubkey[33];
+    size_t pubkeyLen = 33;
+    for(int i=0; i<64; i++){
+        xOnlyPubkey.data[i] = '0';
+    }
+    int pk_parity;
+    int r = secp256k1_keypair_xonly_pub(ctx, &xOnlyPubkey, &pk_parity, &keypair);
+    r = secp256k1_xonly_pubkey_serialize(ctx, xOnlyPubkeySerialized, &xOnlyPubkey);
+
+    
+    secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkey, &pubkeyLen, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_COMPRESSED);
+
+    PublicKeys publicKeys;
+    publicKeys.key = convertToHex(pubkey, 33);
+    publicKeys.xonly = convertToHex(xOnlyPubkeySerialized, 32);
+    publicKeys.seckey = seckey;
+    secp256k1_context_destroy(ctx);
+    return publicKeys;
+}
+
 Result deserializePrivateKey(std::string seckey){
     secp256k1_context *ctx;
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
@@ -441,12 +475,18 @@ EMSCRIPTEN_BINDINGS(my_module) {
     function("ec_pubkey_parse", &ec_pubkey_parse);
     function("deserializePrivateKey", &deserializePrivateKey);
     function("test_keypair_seckey", &test_keypair_seckey);
+    function("export_public_keys", &export_public_keys);
     
 
     value_object<Result>("Result")
         .field("data", &Result::data)
         .field("c", &Result::c)
         .field("r", &Result::r);
+
+    value_object<PublicKeys>("PublicKeys")
+        .field("key", &PublicKeys::key)
+        .field("xonly", &PublicKeys::xonly)
+        .field("seckey", &PublicKeys::seckey);
 
     /*
     value_object<SignResult>("SignResult")
