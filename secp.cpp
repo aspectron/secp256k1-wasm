@@ -5,6 +5,8 @@
  **********************************************************************/
 
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
+
 extern "C" {
     #include <stdio.h>
     #include <string.h>
@@ -144,7 +146,7 @@ extern "C" {
 
         sha265Encode(msg, msgHash);
         charArray2hexString(msgHash, msgHashHex);
-        printf("MSG: %s\nHEX: %s\n", msg, msgHashHex);
+        //printf("MSG: %s\nHEX: %s\n", msg, msgHashHex);
         
 
         //data.ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
@@ -162,10 +164,10 @@ extern "C" {
         
         charArray2hexString(sig.data, hex);
         
-        printf("sig: %s\n", hex);
+        //printf("sig: %s\n", hex);
         charArray2hexString(data.key, privKeyHex);
         
-        printf("privKey: %s\n", privKeyHex);
+        //printf("privKey: %s\n", privKeyHex);
     }
 }
 using namespace emscripten;
@@ -214,7 +216,12 @@ char const hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B
 std::string convertToHex(unsigned char* data, int len) {
   std::string str;
   //int len = 10;//sizeof(data);
-  printf("len: %i %s\n", len, data);
+  /*unsigned char d[len];
+  for (int i = 0; i < len; ++i) {
+    d[i] = data[i];
+  }*/
+  //printf("fdsdfkdfgjkdgjk %s\n", data);
+
   for (int i = 0; i < len; ++i) {
     const char ch = data[i];
     //printf("ch: %c\n", ch);
@@ -227,7 +234,9 @@ std::string convertToHex(unsigned char* data, int len) {
 std::string convertToHex(const unsigned char* data, int len) {
   std::string str;
   //int len = 10;//sizeof(data);
-  //printf("len: %i\n", len);
+  //val Module = val::global("xxx");
+  //Module.call<void>("set", val("fdsdfkdfgdfdfdsf sdf sdfs fsd fsdf sdf sdfs fsd fsdf sdfsdfsd fs fsdf dsj\n"));
+  //printf("");
   for (int i = 0; i < len; ++i) {
     const char ch = data[i];
     //printf("ch: %c\n", ch);
@@ -258,7 +267,6 @@ struct SignResult{
 };
 
 Result result;
-
 
 
 Result ecdsa_sign_new(std::string _msg, std::string privKey){
@@ -352,7 +360,7 @@ Result test_keypair_seckey(std::string seckey){
 
     //result.r = secp256k1_keypair_seckey_load(ctx, sk, &keypair);
     result.r = secp256k1_keypair_seckey(ctx, seckey32, &keypair);
-    printf("keypair.data: %s\n", convertToHex(keypair.data, 96).c_str());
+    //printf("keypair.data: %s\n", convertToHex(keypair.data, 96).c_str());
     
 
     result.data =   "\n\t pk_parity: "+std::to_string(pk_parity)
@@ -403,9 +411,11 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
 
     const unsigned char *msg32 = (unsigned char *)&msg[0];
 
-    unsigned char sig64[64];
-    secp256k1_schnorrsig_sign(ctx, sig64, msg32, &keypair, NULL, NULL);
+    const unsigned char sig64[64]{};
+    secp256k1_schnorrsig_sign(ctx, (unsigned char *)sig64, msg32, &keypair, NULL, NULL);
 
+
+    
     /*
     secp256k1_xonly_pubkey xOnlyPubkey{};
     unsigned char xOnlyPubkeySerialized[32], pubkey[33];
@@ -417,12 +427,12 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
     int r = secp256k1_keypair_xonly_pub(ctx, &xOnlyPubkey, &pk_parity, &keypair);
     r = secp256k1_xonly_pubkey_serialize(ctx, xOnlyPubkeySerialized, &xOnlyPubkey);
 
-    
     secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkey, &pubkeyLen, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_COMPRESSED);
     */
-
+    
     SignResult signResult;
     signResult.sig = convertToHex(sig64, 64);
+    signResult.error = "F7FFA59FE65EFCC9E6CD9C2F7535B7548B36B84004C0F158F6163E836EBA866ECC81C346BCB6D9B8F8A4067A0BA0A487D81501E913F47C6122974831CE75ADA6";
     secp256k1_context_destroy(ctx);
     return signResult;
 }

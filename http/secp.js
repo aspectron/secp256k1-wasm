@@ -1127,9 +1127,34 @@ assert(INITIAL_MEMORY >= TOTAL_STACK, 'INITIAL_MEMORY should be larger than TOTA
 assert(typeof Int32Array !== 'undefined' && typeof Float64Array !== 'undefined' && Int32Array.prototype.subarray !== undefined && Int32Array.prototype.set !== undefined,
        'JS engine does not provide full typed array support');
 
-// If memory is defined in wasm, the user can't provide it.
-assert(!Module['wasmMemory'], 'Use of `wasmMemory` detected.  Use -s IMPORTED_MEMORY to define wasmMemory externally');
-assert(INITIAL_MEMORY == 16777216, 'Detected runtime INITIAL_MEMORY setting.  Use -s IMPORTED_MEMORY to define wasmMemory dynamically');
+// In non-standalone/normal mode, we create the memory here.
+// include: runtime_init_memory.js
+
+
+// Create the wasm memory. (Note: this only applies if IMPORTED_MEMORY is defined)
+
+  if (Module['wasmMemory']) {
+    wasmMemory = Module['wasmMemory'];
+  } else
+  {
+    wasmMemory = new WebAssembly.Memory({
+      'initial': INITIAL_MEMORY / 65536
+      ,
+      'maximum': 2147483648 / 65536
+    });
+  }
+
+if (wasmMemory) {
+  buffer = wasmMemory.buffer;
+}
+
+// If the user provides an incorrect length, just use that length instead rather than providing the user to
+// specifically provide the memory length with Module['INITIAL_MEMORY'].
+INITIAL_MEMORY = buffer.byteLength;
+assert(INITIAL_MEMORY % 65536 === 0);
+updateGlobalBufferAndViews(buffer);
+
+// end include: runtime_init_memory.js
 
 // include: runtime_init_table.js
 // In regular non-RELOCATABLE mode the table is exported
@@ -1505,14 +1530,6 @@ function createWasm() {
     var exports = instance.exports;
 
     Module['asm'] = exports;
-
-    wasmMemory = Module['asm']['memory'];
-    assert(wasmMemory, "memory not found in wasm exports");
-    // This assertion doesn't hold when emscripten is run in --post-link
-    // mode.
-    // TODO(sbc): Read INITIAL_MEMORY out of the wasm file in post-link mode.
-    //assert(wasmMemory.buffer.byteLength === 16777216);
-    updateGlobalBufferAndViews(wasmMemory.buffer);
 
     wasmTable = Module['asm']['__indirect_function_table'];
     assert(wasmTable, "table not found in wasm exports");
@@ -2830,6 +2847,7 @@ var asmLibraryArg = {
   "fd_close": _fd_close,
   "fd_seek": _fd_seek,
   "fd_write": _fd_write,
+  "memory": wasmMemory,
   "setTempRet0": _setTempRet0
 };
 var asm = createWasm();
