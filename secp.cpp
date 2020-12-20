@@ -401,10 +401,10 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
     secp256k1_keypair keypair;
     deserialize_private_key(ctx, seckey, &keypair);
 
-    unsigned char sig64[64];
-    
     const unsigned char *msg32 = (unsigned char *)&msg[0];
-    secp256k1_schnorrsig_sign(ctx, (unsigned char *)&sig64, msg32, &keypair, NULL, NULL);
+
+    unsigned char sig64[64];
+    secp256k1_schnorrsig_sign(ctx, sig64, msg32, &keypair, NULL, NULL);
 
     /*
     secp256k1_xonly_pubkey xOnlyPubkey{};
@@ -422,7 +422,7 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
     */
 
     SignResult signResult;
-    signResult.sig = convertToHex((unsigned char *)&sig64, 64);
+    signResult.sig = convertToHex(sig64, 64);
     secp256k1_context_destroy(ctx);
     return signResult;
 }
