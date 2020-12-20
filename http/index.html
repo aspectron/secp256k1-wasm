@@ -217,10 +217,13 @@
           //console.log("Module.ecdsa_sign()", result);
           //result = null;
 
-          let key = "5b7bb00d0cde4251a87b24d1d5204bb13ac123d379fbcd153b0f741617ab7b9f";
+          let privateKey = "5b7bb00d0cde4251a87b24d1d5204bb13ac123d379fbcd153b0f741617ab7b9f";
           //key = "34343";
-          let r = Module.export_public_keys(key);
-          Module.print("test_keypair_seckey :", key+"\n"+JSON.stringify(r, null, "\t").replace(/<nl>/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t\t"))
+          let r = '';//Module.export_public_keys(privateKey);
+          Module.print("test_keypair_seckey :", privateKey+"\n"+JSON.stringify(r, null, "\t"));//.replace(/<nl>/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t\t"))
+        
+          let r2 = Module.schnorrsig_sign(privateKey, "xxxxx");
+          Module.print("schnorrsig_sign :", privateKey+"\n"+JSON.stringify(r2, null, "\t"))
         },
         totalDependencies: 0,
         monitorRunDependencies: function(left) {

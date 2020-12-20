@@ -45,7 +45,7 @@ static void secp256k1_nonce_function_bip340_sha256_tagged_aux(secp256k1_sha256 *
 
 /* algo16 argument for nonce_function_bip340 to derive the nonce exactly as stated in BIP-340
  * by using the correct tagged hash function. */
-static const unsigned char bip340_algo16[16] = "BIP0340/nonce\0\0\0";
+static const unsigned char bip340_algo16[17] = "BIP0340/nonce\0\0\0";
 
 static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *msg32, const unsigned char *key32, const unsigned char *xonly_pk32, const unsigned char *algo16, void *data) {
     secp256k1_sha256 sha;
@@ -58,7 +58,7 @@ static int nonce_function_bip340(unsigned char *nonce32, const unsigned char *ms
 
     if (data != NULL) {
         secp256k1_nonce_function_bip340_sha256_tagged_aux(&sha);
-        secp256k1_sha256_write(&sha, data, 32);
+        secp256k1_sha256_write(&sha, (const unsigned char *)data, 32);
         secp256k1_sha256_finalize(&sha, masked_key);
         for (i = 0; i < 32; i++) {
             masked_key[i] ^= key32[i];
