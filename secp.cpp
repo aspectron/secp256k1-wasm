@@ -489,24 +489,24 @@ Result secp256k_xonly_pubkey_parse(std::string pubKeyStr){
     return result;
 }
 
-ProcessResult schnorrsig_verify(std::string sig, std::string msg, std::string xonlykey){
+ProcessResult schnorrsig_verify(std::string sig64, std::string msg32, std::string xonlykey){
     secp256k1_context *ctx;
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
 
     secp256k1_xonly_pubkey xonlyPubKey;
 
-    const unsigned char *sig64 = strToUnsignedChars(sig);
-    const unsigned char *msg32 = strToUnsignedChars(msg);
-    const unsigned char *pubKey = strToUnsignedChars(xonlykey);
+    const unsigned char *sig = (const unsigned char *)sig64.c_str();
+    const unsigned char *msg = (const unsigned char *)msg32.c_str();
+    const unsigned char *pubKey = (const unsigned char *)xonlykey.c_str();
 
     int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
     printf("secp256k1_xonly_pubkey_parse: %d, pubKey: %s\n", r, pubKey);
-    r = secp256k1_schnorrsig_verify(ctx, sig64, msg32, &xonlyPubKey);
+    r = secp256k1_schnorrsig_verify(ctx, sig, msg, &xonlyPubKey);
     secp256k1_context_destroy(ctx);
 
     ProcessResult pResult;
     pResult.success = r==1;
-    pResult.error = convertToHex(xonlyPubKey.data, 64);
+    pResult.error = convertToHex(xonlyPubKey.data, 64)+", sig:"+convertToString(sig);
     return pResult;
 }
 
