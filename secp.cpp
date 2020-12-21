@@ -5,7 +5,6 @@
  **********************************************************************/
 
 #include <emscripten/bind.h>
-#include <emscripten/val.h>
 
 extern "C" {
     #include <stdio.h>
@@ -220,7 +219,7 @@ std::string convertToHex(unsigned char* data, int len) {
   for (int i = 0; i < len; ++i) {
     d[i] = data[i];
   }*/
-  //printf("fdsdfkdfgjkdgjk %s\n", data);
+  //printf("fdsdfkdfgjkdxxnjhhhhhhhhh hh h h h h h h h hh h h h h  khjjhk hk jhkj hkj gk gjk %s\n", data);
 
   for (int i = 0; i < len; ++i) {
     const char ch = data[i];
@@ -234,9 +233,7 @@ std::string convertToHex(unsigned char* data, int len) {
 std::string convertToHex(const unsigned char* data, int len) {
   std::string str;
   //int len = 10;//sizeof(data);
-  //val Module = val::global("xxx");
-  //Module.call<void>("set", val("fdsdfkdfgdfdfdsf sdf sdfs fsd fsdf sdf sdfs fsd fsdf sdfsdfsd fs fsdf dsj\n"));
-  //printf("");
+  //printf("ffXXXXXXXXXXj %s\n", data);
   for (int i = 0; i < len; ++i) {
     const char ch = data[i];
     //printf("ch: %c\n", ch);
@@ -257,12 +254,18 @@ struct Result {
 
 struct PublicKeys{
     std::string key;
+    std::string pubkey;
     std::string xonly;
     std::string seckey;
 };
 
 struct SignResult{
     std::string sig;
+    std::string error;
+};
+
+struct ProcessResult{
+    bool success;
     std::string error;
 };
 
@@ -383,20 +386,19 @@ PublicKeys export_public_keys(std::string seckey){
     deserialize_private_key(ctx, seckey, &keypair);
 
     secp256k1_xonly_pubkey xOnlyPubkey{};
-    unsigned char xOnlyPubkeySerialized[32], pubkey[33];
-    size_t pubkeyLen = 33;
-    for(int i=0; i<64; i++){
-        xOnlyPubkey.data[i] = '0';
-    }
+    unsigned char xOnlyPubkeySerialized[32], pubkey[33], pubkeyFull[65];
+    size_t pubkeyLen = 33, pubkeyLenFull = 65;
     int pk_parity;
     int r = secp256k1_keypair_xonly_pub(ctx, &xOnlyPubkey, &pk_parity, &keypair);
     r = secp256k1_xonly_pubkey_serialize(ctx, xOnlyPubkeySerialized, &xOnlyPubkey);
 
     
+    secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkeyFull, &pubkeyLenFull, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_UNCOMPRESSED);
     secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkey, &pubkeyLen, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_COMPRESSED);
 
     PublicKeys publicKeys;
-    publicKeys.key = convertToHex(pubkey, 33);
+    publicKeys.key = convertToHex(pubkeyFull, 65);
+    publicKeys.pubkey = convertToHex(pubkey, 33);
     publicKeys.xonly = convertToHex(xOnlyPubkeySerialized, 32);
     publicKeys.seckey = seckey;
     secp256k1_context_destroy(ctx);
@@ -411,8 +413,8 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
 
     const unsigned char *msg32 = (unsigned char *)&msg[0];
 
-    const unsigned char sig64[64]{};
-    secp256k1_schnorrsig_sign(ctx, (unsigned char *)sig64, msg32, &keypair, NULL, NULL);
+    unsigned char sig64[64];
+    secp256k1_schnorrsig_sign(ctx, sig64, msg32, &keypair, NULL, NULL);
 
 
     
@@ -432,7 +434,7 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
     
     SignResult signResult;
     signResult.sig = convertToHex(sig64, 64);
-    signResult.error = "F7FFA59FE65EFCC9E6CD9C2F7535B7548B36B84004C0F158F6163E836EBA866ECC81C346BCB6D9B8F8A4067A0BA0A487D81501E913F47C6122974831CE75ADA6";
+    signResult.error = "";
     secp256k1_context_destroy(ctx);
     return signResult;
 }
@@ -485,7 +487,28 @@ Result secp256k_xonly_pubkey_parse(std::string pubKeyStr){
     result.r = r;
     result.data = convertToString(pubKey)+"::"+convertToHex(xonlyPubKey.data, 64);
     return result;
-} 
+}
+
+ProcessResult schnorrsig_verify(std::string sig, std::string msg, std::string xonlykey){
+    secp256k1_context *ctx;
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+
+    secp256k1_xonly_pubkey xonlyPubKey;
+
+    const unsigned char *sig64 = strToUnsignedChars(sig);
+    const unsigned char *msg32 = strToUnsignedChars(msg);
+    const unsigned char *pubKey = strToUnsignedChars(xonlykey);
+
+    int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
+    printf("secp256k1_xonly_pubkey_parse: %d, pubKey: %s\n", r, pubKey);
+    r = secp256k1_schnorrsig_verify(ctx, sig64, msg32, &xonlyPubKey);
+    secp256k1_context_destroy(ctx);
+
+    ProcessResult pResult;
+    pResult.success = r==1;
+    pResult.error = convertToHex(xonlyPubKey.data, 64);
+    return pResult;
+}
 
 
 /*
@@ -509,13 +532,17 @@ void schnorr_sign(const unsigned char *sk, const unsigned char *pk_serialized, u
 
 EMSCRIPTEN_BINDINGS(my_module) {
     //function("lerp", &lerp);
+
     function("ecdsa_sign", &ecdsa_sign_new);
     function("secp256k_xonly_pubkey_parse", &secp256k_xonly_pubkey_parse);
     function("ec_pubkey_parse", &ec_pubkey_parse);
     function("deserializePrivateKey", &deserializePrivateKey);
     function("test_keypair_seckey", &test_keypair_seckey);
+    
+
     function("export_public_keys", &export_public_keys);
     function("schnorrsig_sign", &schnorrsig_sign);
+    function("schnorrsig_verify", &schnorrsig_verify);
     
 
     value_object<Result>("Result")
@@ -525,12 +552,17 @@ EMSCRIPTEN_BINDINGS(my_module) {
 
     value_object<PublicKeys>("PublicKeys")
         .field("key", &PublicKeys::key)
+        .field("pubkey", &PublicKeys::pubkey)
         .field("xonly", &PublicKeys::xonly)
         .field("seckey", &PublicKeys::seckey);
 
     value_object<SignResult>("SignResult")
         .field("sig", &SignResult::sig)
         .field("error", &SignResult::error);
+
+    value_object<ProcessResult>("ProcessResult")
+        .field("success", &ProcessResult::success)
+        .field("error", &ProcessResult::error);
 
     /*
     value_object<SignResult>("SignResult")
