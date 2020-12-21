@@ -223,19 +223,22 @@
           //console.log("Module.ecdsa_sign()", result);
           //result = null;
 
-          let privateKey = "5b7bb00d0cde4251a87b24d1d5204bb13ac123d379fbcd153b0f741617ab7b9f";
+          let privateKey = "1d4a408fe361b504adc15a576ab8c08cc56d9d05b0825fa3adea7b54deeff625";
 
           let msg = "f7eef88671ce6da658c0fb838482e3d1aaef8e4dfc9a85d73517eb0485acb31d";
           let sigResult = Module.schnorrsig_sign(privateKey, msg);
           Module.print("schnorrsig_sign :", privateKey+"\n"+JSON.stringify(sigResult, null, "\t"))
 
-          //key = "34343";
           let keys = Module.export_public_keys(privateKey);
-          Module.print("test_keypair_seckey :", privateKey+"\n"+JSON.stringify(keys, null, "\t"));//.replace(/<nl>/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t\t"))
+          Module.print("test_keypair_seckey :", privateKey+"\n"+JSON.stringify(keys, null, "\t"));
 
           Module.print(`sig: ${sigResult.sig}\nmsg: ${msg}\nxonly: ${keys.xonly}\n`)
           let verifyResult = Module.schnorrsig_verify(sigResult.sig, msg, keys.xonly);
           Module.print("schnorrsig_verify", JSON.stringify(verifyResult, null, "\t"));
+
+          let xonlyKey = "c26f917722916764419faac71bd6ae2b97e6385ec6cc5d1f85d3fc87790029f4";
+          let xonlyResult = Module.xonly_pubkey_parse(xonlyKey);
+          Module.print("xonly_pubkey_parse", xonlyKey, "\n"+JSON.stringify(xonlyResult, null, "\t"));
 
         },
         totalDependencies: 0,

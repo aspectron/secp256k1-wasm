@@ -401,8 +401,11 @@ PublicKeys export_public_keys(std::string seckey){
     r = secp256k1_xonly_pubkey_serialize(ctx, xOnlyPubkeySerialized, &xOnlyPubkey);
 
     
-    secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkeyFull, &pubkeyLenFull, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_UNCOMPRESSED);
-    secp256k1_ec_pubkey_serialize(ctx, (unsigned char *)&pubkey, &pubkeyLen, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_COMPRESSED);
+    secp256k1_ec_pubkey_serialize(ctx, pubkeyFull, &pubkeyLenFull, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_UNCOMPRESSED);
+    secp256k1_ec_pubkey_serialize(ctx, pubkey, &pubkeyLen, (const secp256k1_pubkey *)&xOnlyPubkey, SECP256K1_EC_COMPRESSED);
+
+
+    printf("pubkeyFull fsdsd fds fdsf dsf sgfd gdf gdfgd fgs dasfs f sdfs fsd sdf %s\n", pubkeyFull);
 
     PublicKeys publicKeys;
     publicKeys.key = convertToHex(pubkeyFull, 65);
@@ -487,14 +490,15 @@ Result ec_pubkey_parse(std::string pubKeyStr){
     return result;
 }
 
-Result secp256k_xonly_pubkey_parse(std::string pubKeyStr){
+Result xonly_pubkey_parse(std::string pubKeyStr){
     secp256k1_context *ctx;
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     //secp256k1_context_randomize(ctx)
 
     secp256k1_xonly_pubkey xonlyPubKey;
 
-    const unsigned char *pubKey = strToUnsignedChars(pubKeyStr);
+    unsigned char pubKey[64];
+    hexToBytes(pubKeyStr, pubKey);
     int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
     secp256k1_context_destroy(ctx);
 
@@ -502,7 +506,7 @@ Result secp256k_xonly_pubkey_parse(std::string pubKeyStr){
     //charArray2hexString(xonlyPubKey.data, dataHex);
     //result.data = convertToString(pubKey);
     result.r = r;
-    result.data = convertToString(pubKey)+"::"+convertToHex(xonlyPubKey.data, 64);
+    result.data = convertToHex(xonlyPubKey.data, 64);
     return result;
 }
 
@@ -556,12 +560,12 @@ EMSCRIPTEN_BINDINGS(my_module) {
     //function("lerp", &lerp);
 
     function("ecdsa_sign", &ecdsa_sign_new);
-    function("secp256k_xonly_pubkey_parse", &secp256k_xonly_pubkey_parse);
+    
     function("ec_pubkey_parse", &ec_pubkey_parse);
     function("deserializePrivateKey", &deserializePrivateKey);
     function("test_keypair_seckey", &test_keypair_seckey);
     
-
+    function("xonly_pubkey_parse", &xonly_pubkey_parse);
     function("export_public_keys", &export_public_keys);
     function("schnorrsig_sign", &schnorrsig_sign);
     function("schnorrsig_verify", &schnorrsig_verify);
