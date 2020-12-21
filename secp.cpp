@@ -322,11 +322,7 @@ Result ecdsa_sign_new(std::string _msg, std::string privKey){
 }
 
 int deserialize_private_key(secp256k1_context *ctx, std::string private_key, secp256k1_keypair *keypair){
-    for(int i=0; i<96; i++){
-        keypair->data[i] = 'x';
-    }
-
-    const unsigned char *privateKey = strToUnsignedChars(private_key);
+    const unsigned char *privateKey = (const unsigned char *)private_key.c_str();
     return secp256k1_keypair_create(ctx, keypair, privateKey);
 }
 
@@ -411,7 +407,7 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg){
     secp256k1_keypair keypair;
     deserialize_private_key(ctx, seckey, &keypair);
 
-    const unsigned char *msg32 = (unsigned char *)&msg[0];
+    const unsigned char *msg32 = (unsigned char *)msg.c_str();
 
     unsigned char sig64[64];
     secp256k1_schnorrsig_sign(ctx, sig64, msg32, &keypair, NULL, NULL);
