@@ -1,5 +1,19 @@
 {
 	"name": "secp256k1-wasm",
+	"version": "0.0.1",
+	"description": "WASM wrapper for libsecp256k1",
+	"license": "MIT",
+	"main": "index.js",
+	"files": [
+		"build",
+		"build.bat",
+		"index.js",
+		"README.md",
+		"secp256k1-bindings.cpp",
+		"depend",
+		"http",
+		"test"
+	],
 	"dependencies": {
 	},
 	"devDependencies": {
