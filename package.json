@@ -1,6 +1,8 @@
 {
-	"name": "wasm",
+	"name": "secp256k1-wasm",
 	"dependencies": {
+	},
+	"devDependencies": {
 		"express": "*"
 	}
 }
