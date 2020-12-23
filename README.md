@@ -1,6 +1,6 @@
 PLEASE NOTE - THIS PROJECT IS NOT PRODUCTION READY
 
-spcp256k1-wasm
+secp256k1-wasm
 ==============
 
 EMCC+LLVM WebAssembly bindings for [libsecp256k1 ](https://github.com/bitcoin-core/secp256k1)
@@ -25,9 +25,7 @@ Building Binaryen:
     NNN = number of CPU cores/threads
 
 
-Building Emscripten and LLVM:
-
-The following process builds LLVM inside the `./emscripten/build` folder
+The following process builds LLVM inside the `./emscripten/build` folder:
 
     $ cd emscripten
     $ mkdir build
@@ -61,7 +59,13 @@ You can run `./build` or `build.bat` to build the WASM binaries or execute the f
 
 To test the build, you will require an installed version of NodeJs. From within the `secp256k1-wasm` folder please run the following:
 
+using python SimpleHTTPServer:
+
+    $ python -m SimpleHTTPServer 8000
+
+using nodejs:
+
     $ npm install
-    $ node server
+    $ node test/node-server
 
 You should now be able to access the emscripten environment with secp256k1 loaded at http://localhost:3000
