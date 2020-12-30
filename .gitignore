@@ -6,3 +6,6 @@ package-lock.json
 libwebp
 ./secp256k1
 ./deprecated
+llvm-project/
+binaryen/
+emscripten/

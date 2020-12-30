@@ -14,8 +14,7 @@
 		"http",
 		"test"
 	],
-	"dependencies": {
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"express": "*"
 	}
