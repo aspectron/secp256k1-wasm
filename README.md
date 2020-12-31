@@ -24,6 +24,8 @@ Building Binaryen:
     $ cmake --build . --config Release -j NNN
     NNN = number of CPU cores/threads
 
+Override emscripten src files
+    $ cp emscripten_override/src/* to emscripten/src/
 
 The following process builds LLVM inside the `./emscripten/build` folder:
 
