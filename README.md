@@ -33,12 +33,7 @@ The following process builds LLVM inside the `./emscripten/build` folder:
     $ cd emscripten
     $ mkdir build
     $ cd build/
-    $ cmake ../../llvm-project/llvm \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DLLVM_ENABLE_PROJECTS='lld;clang' \
-    -DLLVM_TARGETS_TO_BUILD="host;WebAssembly" \
-    -DLLVM_INCLUDE_EXAMPLES=OFF \
-    -DLLVM_INCLUDE_TESTS=OFF
+    $ cmake ../../llvm-project/llvm -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS='lld;clang' -DLLVM_TARGETS_TO_BUILD="host;WebAssembly" -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF
     $ cmake --build . --config Release -j NNN
     NNN = number of CPU cores/threads
     $ cd ..     
