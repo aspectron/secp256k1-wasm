@@ -1,5 +1,3 @@
-PLEASE NOTE - THIS PROJECT IS NOT PRODUCTION READY
-
 secp256k1-wasm
 ==============
 
