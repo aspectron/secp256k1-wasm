@@ -1,6 +1,6 @@
 {
 	"name": "secp256k1-wasm",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "WASM wrapper for libsecp256k1",
 	"license": "MIT",
 	"main": "index.js",
