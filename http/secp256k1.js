@@ -75,7 +75,7 @@ var nodeFS;
 var nodePath;
 
 if (ENVIRONMENT_IS_NODE) {
-  if (ENVIRONMENT_IS_WORKER) {
+  if (0 && ENVIRONMENT_IS_WORKER) {
     scriptDirectory = require('path').dirname(scriptDirectory) + '/';
   } else {
     scriptDirectory = __dirname + '/';
