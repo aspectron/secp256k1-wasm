@@ -3234,6 +3234,10 @@ if (Module['preInit']) {
   }
 }
 
+if (typeof module !== 'undefined') {
+  module['exports'] = Module;
+}
+
 noExitRuntime = true;
 
 run();
