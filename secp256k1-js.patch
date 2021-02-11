@@ -1,0 +1,59 @@
+- add support for workers in NWJS
+- remove global exception handling
+- add node-style module export
+---
+ http/secp256k1.js | 27 ++++++++++++++++-----------
+ 1 file changed, 16 insertions(+), 11 deletions(-)
+
+diff --git a/http/secp256k1.js b/http/secp256k1.js
+index d54d1be..1ece7eb 100644
+--- a/http/secp256k1.js
++++ b/http/secp256k1.js
+@@ -75,11 +75,11 @@ var nodeFS;
+ var nodePath;
+ 
+ if (ENVIRONMENT_IS_NODE) {
+-  if (ENVIRONMENT_IS_WORKER) {
+-    scriptDirectory = require('path').dirname(scriptDirectory) + '/';
+-  } else {
++  //if (ENVIRONMENT_IS_WORKER) {
++  //  scriptDirectory = require('path').dirname(scriptDirectory) + '/';
++  //} else {
+     scriptDirectory = __dirname + '/';
+-  }
++  //}
+ 
+ // include: node_shell_read.js
+ 
+@@ -111,14 +111,15 @@ readBinary = function readBinary(filename) {
+     module['exports'] = Module;
+   }
+ 
+-  process['on']('uncaughtException', function(ex) {
+-    // suppress ExitStatus exceptions from showing an error
+-    if (!(ex instanceof ExitStatus)) {
+-      throw ex;
+-    }
+-  });
++  
++  // process['on']('uncaughtException', function(ex) {
++  //   // suppress ExitStatus exceptions from showing an error
++  //   if (!(ex instanceof ExitStatus)) {
++  //     throw ex;
++  //   }
++  // });
++  // process['on']('unhandledRejection', abort);
+ 
+-  process['on']('unhandledRejection', abort);
+ 
+   quit_ = function(status) {
+     process['exit'](status);
+@@ -3238,6 +3239,10 @@ noExitRuntime = true;
+ 
+ run();
+ 
++if (typeof module !== 'undefined') {
++  module['exports'] = Module;
++}
++
+
