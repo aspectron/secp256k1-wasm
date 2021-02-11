@@ -138,6 +138,24 @@ struct ProcessResult{
     std::string info;
 };
 
+static secp256k1_context *ctx = NULL;
+
+bool create_context() {
+    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    return ctx ? true : false;
+}
+
+bool destroy_context() {
+    secp256k1_context_destroy(ctx);
+    ctx = NULL;
+    return true;
+}
+
+void ensure_context() {
+    if(!ctx)
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+}
+
 int deserialize_private_key(secp256k1_context *ctx, std::string private_key, secp256k1_keypair *keypair){
     unsigned char privateKey[32];
     hexToBytes(private_key, privateKey);
@@ -145,8 +163,7 @@ int deserialize_private_key(secp256k1_context *ctx, std::string private_key, sec
 }
 
 PublicKeys export_public_keys(std::string seckey){
-    secp256k1_context *ctx;
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    ensure_context();
     secp256k1_keypair keypair;
     deserialize_private_key(ctx, seckey, &keypair);
 
@@ -167,14 +184,28 @@ PublicKeys export_public_keys(std::string seckey){
     publicKeys.pubkey = convertToHex(pubkey, 33);
     publicKeys.xonly = convertToHex(xOnlyPubkeySerialized, 32);
     publicKeys.seckey = seckey;
-    secp256k1_context_destroy(ctx);
 
     return publicKeys;
 }
 
+
+std::string export_public_key_xonly(std::string seckey) {
+    ensure_context();
+    secp256k1_keypair keypair;
+    deserialize_private_key(ctx, seckey, &keypair);
+
+    secp256k1_xonly_pubkey xOnlyPubkey{};
+    unsigned char xOnlyPubkeySerialized[32];
+    int pk_parity;
+    int r = secp256k1_keypair_xonly_pub(ctx, &xOnlyPubkey, &pk_parity, &keypair);
+    r = secp256k1_xonly_pubkey_serialize(ctx, xOnlyPubkeySerialized, &xOnlyPubkey);
+
+    return convertToHex(xOnlyPubkeySerialized, 32);
+}
+
+
 SignResult schnorrsig_sign(std::string seckey, std::string msg32){
-    secp256k1_context *ctx;
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    ensure_context();
     secp256k1_keypair keypair;
     deserialize_private_key(ctx, seckey, &keypair);
 
@@ -187,33 +218,28 @@ SignResult schnorrsig_sign(std::string seckey, std::string msg32){
     SignResult signResult;
     signResult.sig = convertToHex(sig, 64);
     signResult.error = "";
-    secp256k1_context_destroy(ctx);
     return signResult;
 }
 
 Result deserializePrivateKey(std::string seckey){
-    secp256k1_context *ctx;
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+    ensure_context();
     secp256k1_keypair keypair;
     unsigned char privateKey[32];
     hexToBytes(seckey, privateKey);
     Result result;
     result.r = deserialize_private_key(ctx, seckey, &keypair);
     result.data = convertToString(privateKey)+"<nl>"+convertToHex(keypair.data, 96);
-    secp256k1_context_destroy(ctx);
     return result;
 }
 
 Result xonly_pubkey_parse(std::string pubKeyStr){
-    secp256k1_context *ctx;
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    ensure_context();
 
     secp256k1_xonly_pubkey xonlyPubKey;
 
     unsigned char pubKey[64];
     hexToBytes(pubKeyStr, pubKey);
     int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
-    secp256k1_context_destroy(ctx);
 
     Result result;
     result.r = r;
@@ -222,8 +248,7 @@ Result xonly_pubkey_parse(std::string pubKeyStr){
 }
 
 ProcessResult schnorrsig_verify(std::string sig64, std::string msg32, std::string xonlykey32){
-    secp256k1_context *ctx;
-    ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+    ensure_context();
 
     secp256k1_xonly_pubkey xonlyPubKey;
 
@@ -239,7 +264,6 @@ ProcessResult schnorrsig_verify(std::string sig64, std::string msg32, std::strin
     int r = secp256k1_xonly_pubkey_parse(ctx, &xonlyPubKey, pubKey);
     //printf("secp256k1_xonly_pubkey_parse: %d, pubKey: %s\n", r, pubKey);
     r = secp256k1_schnorrsig_verify(ctx, sig, msg, &xonlyPubKey);
-    secp256k1_context_destroy(ctx);
 
     ProcessResult pResult;
     pResult.success = r==1;
@@ -249,9 +273,13 @@ ProcessResult schnorrsig_verify(std::string sig64, std::string msg32, std::strin
 
 
 EMSCRIPTEN_BINDINGS(my_module) {
+    function("create_context", &create_context);
+    function("destroy_context", &destroy_context);
+
     function("deserializePrivateKey", &deserializePrivateKey);
     function("xonly_pubkey_parse", &xonly_pubkey_parse);
     function("export_public_keys", &export_public_keys);
+    function("export_public_key_xonly", &export_public_key_xonly);
     function("schnorrsig_sign", &schnorrsig_sign);
     function("schnorrsig_verify", &schnorrsig_verify);
     

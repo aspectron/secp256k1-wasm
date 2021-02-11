@@ -75,7 +75,7 @@ var nodeFS;
 var nodePath;
 
 if (ENVIRONMENT_IS_NODE) {
-  if (0 && ENVIRONMENT_IS_WORKER) {
+  if (ENVIRONMENT_IS_WORKER) {
     scriptDirectory = require('path').dirname(scriptDirectory) + '/';
   } else {
     scriptDirectory = __dirname + '/';
@@ -111,14 +111,14 @@ readBinary = function readBinary(filename) {
     module['exports'] = Module;
   }
 
-  // process['on']('uncaughtException', function(ex) {
-  //   // suppress ExitStatus exceptions from showing an error
-  //   if (!(ex instanceof ExitStatus)) {
-  //     throw ex;
-  //   }
-  // });
+  process['on']('uncaughtException', function(ex) {
+    // suppress ExitStatus exceptions from showing an error
+    if (!(ex instanceof ExitStatus)) {
+      throw ex;
+    }
+  });
 
-  // process['on']('unhandledRejection', abort);
+  process['on']('unhandledRejection', abort);
 
   quit_ = function(status) {
     process['exit'](status);
@@ -3232,10 +3232,6 @@ if (Module['preInit']) {
   while (Module['preInit'].length > 0) {
     Module['preInit'].pop()();
   }
-}
-
-if (typeof module !== 'undefined') {
-  module['exports'] = Module;
 }
 
 noExitRuntime = true;
