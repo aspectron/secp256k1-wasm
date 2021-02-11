@@ -1,6 +1,6 @@
 {
 	"name": "secp256k1-wasm",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "WASM build of libsecp256k1",
 	"author": "ASPECTRON Inc.",
 	"license": "MIT",
