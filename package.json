@@ -18,7 +18,6 @@
 	],
 	"dependencies": {},
 	"devDependencies": {
-		"express": "*"
 	},
 	"repository": {
 		"type": "git",
