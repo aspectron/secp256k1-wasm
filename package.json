@@ -8,6 +8,7 @@
 	"files": [
 		"build",
 		"build.bat",
+		"secp256k1-js.patch",
 		"index.js",
 		"README.md",
 		"secp256k1-bindings.cpp",
