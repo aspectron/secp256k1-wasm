@@ -75,11 +75,11 @@ var nodeFS;
 var nodePath;
 
 if (ENVIRONMENT_IS_NODE) {
-  if (ENVIRONMENT_IS_WORKER) {
-    scriptDirectory = require('path').dirname(scriptDirectory) + '/';
-  } else {
+  //if (ENVIRONMENT_IS_WORKER) {
+  //  scriptDirectory = require('path').dirname(scriptDirectory) + '/';
+  //} else {
     scriptDirectory = __dirname + '/';
-  }
+  //}
 
 // include: node_shell_read.js
 
@@ -111,14 +111,15 @@ readBinary = function readBinary(filename) {
     module['exports'] = Module;
   }
 
-  process['on']('uncaughtException', function(ex) {
-    // suppress ExitStatus exceptions from showing an error
-    if (!(ex instanceof ExitStatus)) {
-      throw ex;
-    }
-  });
+  
+  // process['on']('uncaughtException', function(ex) {
+  //   // suppress ExitStatus exceptions from showing an error
+  //   if (!(ex instanceof ExitStatus)) {
+  //     throw ex;
+  //   }
+  // });
+  // process['on']('unhandledRejection', abort);
 
-  process['on']('unhandledRejection', abort);
 
   quit_ = function(status) {
     process['exit'](status);
@@ -3237,6 +3238,10 @@ if (Module['preInit']) {
 noExitRuntime = true;
 
 run();
+
+if (typeof module !== 'undefined') {
+  module['exports'] = Module;
+}
 
 
 
