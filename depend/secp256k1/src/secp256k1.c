@@ -24,7 +24,7 @@
 #include "selftest.h"
 
 #ifdef SECP256K1_NO_BUILD
-# error "secp256k1.h processed without SECP256K1_BUILD defined while building secp256k1.c"
+//# error "secp256k1.h processed without SECP256K1_BUILD defined while building secp256k1.c"
 #endif
 
 #if defined(VALGRIND)

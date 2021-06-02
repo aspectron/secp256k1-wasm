@@ -222,7 +222,8 @@ static SECP256K1_INLINE void secp256k1_memczero(void *s, size_t len, int flag) {
  * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95189
  */
 static SECP256K1_INLINE int secp256k1_memcmp_var(const void *s1, const void *s2, size_t n) {
-    const unsigned char *p1 = s1, *p2 = s2;
+    /*
+    const void *p1 = s1, *p2 = s2;
     size_t i;
 
     for (i = 0; i < n; i++) {
@@ -232,6 +233,8 @@ static SECP256K1_INLINE int secp256k1_memcmp_var(const void *s1, const void *s2,
         }
     }
     return 0;
+    */
+    return memcmp(s1, s2, n);
 }
 
 /** If flag is true, set *r equal to *a; otherwise leave it. Constant-time.  Both *r and *a must be initialized and non-negative.*/
